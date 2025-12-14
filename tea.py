@@ -15,8 +15,6 @@
 """
 
 
-
-
 # Подключаем необходимые стандартные библиотеки Python
 import struct
 from typing import Tuple
