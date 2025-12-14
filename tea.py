@@ -67,7 +67,7 @@ def tea_encrypt_block(block: bytes, key: bytes, rounds: int = 32) -> bytes:
     # Делим ключ на 4 части
     k0, k1, k2, k3 = _key_u32_be(key)
 
-    # Начальное значение суммы
+    # Начальное значение суммы.
     s = 0
 
     # Основной цикл шифрования (32 раунда)
