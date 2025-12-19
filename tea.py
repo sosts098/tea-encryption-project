@@ -67,7 +67,7 @@ def tea_encrypt_block(block: bytes, key: bytes, rounds: int = 32) -> bytes:
     # Делим ключ на 4 части
     k0, k1, k2, k3 = _key_u32_be(key)
 
-    # Начальное значение суммы.
+    # Начальное значение суммы
     s = 0
 
     # Основной цикл шифрования (32 раунда)
@@ -111,7 +111,13 @@ def pkcs7_unpad(data: bytes) -> bytes:
     """
     Убирает padding после расшифрования.
     """
-    return data[:-data[-1]]
+    pad_len = data[-1]
+
+    # Проверка корректности padding
+    if pad_len < 1 or pad_len > BLOCK_SIZE:
+        raise ValueError("Ошибка padding. Возможно, неверный ключ или повреждённые данные.")
+
+    return data[:-pad_len]
 
 
 def ecb_encrypt(data: bytes, key: bytes) -> bytes:
@@ -138,6 +144,24 @@ def ecb_decrypt(data: bytes, key: bytes) -> bytes:
 
     return pkcs7_unpad(result)
 
+def is_valid_hex_string(text: str) -> bool:
+    """
+    Проверяет, является ли строка корректной hex-строкой.
+    Используется перед расшифрованием.
+    """
+    text = text.strip().lower()
+
+    # Hex-строка должна иметь чётную длину
+    if len(text) == 0 or len(text) % 2 != 0:
+        return False
+
+    # Проверяем каждый символ
+    for ch in text:
+        if ch not in "0123456789abcdef":
+            return False
+
+    return True
+
 
 # ================== ДИАЛОГОВЫЙ РЕЖИМ ==================
 
@@ -149,7 +173,19 @@ def dialog_mode():
     print("=== Алгоритм шифрования TEA ===")
 
     # Ввод ключа
-    key_hex = input("Введите ключ (32 hex-символа): ")
+    key_hex = input("Введите ключ (32 hex-символа): ").strip().replace(" ", "").lower()
+
+    # Проверка длины ключа
+    if len(key_hex) != 32:
+        print("Ошибка: ключ должен содержать ровно 32 hex-символа.")
+        return
+
+    # Проверка, что ключ действительно hex
+    for ch in key_hex:
+        if ch not in "0123456789abcdef":
+            print("Ошибка: ключ содержит недопустимые символы.")
+            return
+
     key = bytes.fromhex(key_hex)
 
     while True:
@@ -172,9 +208,12 @@ def dialog_mode():
             print(encrypted.hex())
 
         elif choice == "2":
-            decrypted = ecb_decrypt(bytes.fromhex(text), key)
-            print("Расшифрованный текст:")
-            print(decrypted.decode("utf-8"))
+            try:
+                decrypted = ecb_decrypt(bytes.fromhex(text), key)
+                print("Расшифрованный текст:")
+                print(decrypted.decode("utf-8"))
+            except ValueError as e:
+                print("Ошибка расшифрования:", e)
 
         else:
             print("Ошибка: неверный пункт меню.")
